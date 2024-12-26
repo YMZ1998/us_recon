@@ -1,110 +1,135 @@
+#include "bmp_reader.h"
 #include <algorithm>
 #include <iostream>
-#include "bmp_reader.h"
+#include <vector>
 
-bool ReadBMP(std::string imagepath, unsigned char*& header,
-             unsigned char*& rgbData, unsigned int& headerSize,
-             unsigned int& imageSize) {
-  // BMP Header
-  header = new unsigned char[HEADER_SIZE];
-  unsigned int width;
-  unsigned int height;
-  unsigned short bitsPerPixel;
-
-  // Open the file
-  FILE* file = fopen(imagepath.c_str(), "rb");
+bool ReadBMP(const std::string& imagePath, std::vector<unsigned char>& header,
+             std::vector<unsigned char>& rgbData) {
+  FILE* file = fopen(imagePath.c_str(), "rb");
   if (!file) {
-    std::cerr << "Image could not be opened" << std::endl;
+    std::cerr << "Error: Could not open image file " << imagePath << std::endl;
     return false;
   }
 
-  // If it cannot read at least 54 bytes then this is not a valid BMP File
-  // If the first two bytes are not "BM" respectively this is not a valid BMP file
-
-  if (fread(header, 1, HEADER_SIZE, file) != HEADER_SIZE || header[0] != 'B' ||
-      header[1] != 'M') {
-    std::cerr << "This is not a valid BMP file" << std::endl;
+  header.resize(HEADER_SIZE);
+  if (fread(header.data(), 1, HEADER_SIZE, file) != HEADER_SIZE ||
+      header[0] != 'B' || header[1] != 'M') {
+    std::cerr << "Error: This is not a valid BMP file" << std::endl;
+    fclose(file);
     return false;
   }
 
-  headerSize = *(unsigned int*)&header[HEADER_SIZE_INDEX];
-  imageSize = *(unsigned int*)&header[IMAGE_SIZE_INDEX];
-  width = *(unsigned int*)&header[WIDTH_INDEX];
-  height = *(unsigned int*)&header[HEIGHT_INDEX];
-  bitsPerPixel = *(unsigned short*)&header[BITS_PER_PIXEL_INDEX];
+  unsigned int headerSize = *reinterpret_cast<unsigned int*>(&header[HEADER_SIZE_INDEX]);
+  unsigned int imageSize = *reinterpret_cast<unsigned int*>(&header[IMAGE_SIZE_INDEX]);
+  unsigned int width = *reinterpret_cast<unsigned int*>(&header[WIDTH_INDEX]);
+  unsigned int height = *reinterpret_cast<unsigned int*>(&header[HEIGHT_INDEX]);
+  unsigned short bitsPerPixel =
+      *reinterpret_cast<unsigned short*>(&header[BITS_PER_PIXEL_INDEX]);
 
   if (headerSize > HEADER_SIZE) {
-    // Header size is greater than 54 bytes, let's re-read the whole header.
-    delete[] header;
-    header = new unsigned char[headerSize];
+    header.resize(headerSize);
     rewind(file);
-    fread(header, 1, headerSize, file);
-  } else if (headerSize ==
-             0)  // If header size was not specified within the file header.
-  {
-    // The BMP header has 54 bytes of that, the image should start right after the header.
+    if (fread(header.data(), 1, headerSize, file) != headerSize) {
+      std::cerr << "Error: Failed to read the extended BMP header" << std::endl;
+      fclose(file);
+      return false;
+    }
+  }
+
+  if (headerSize == 0) {
     headerSize = HEADER_SIZE;
   }
 
-  // Setting default values of imageSize if it was not found on the file header.
   if (imageSize == 0) {
     imageSize = width * height * (bitsPerPixel / BITS_PER_BYTE);
   }
 
-  // Create a buffer
-  rgbData = new unsigned char[imageSize];
+  rgbData.resize(imageSize);
+  if (fread(rgbData.data(), 1, imageSize, file) != imageSize) {
+    std::cerr << "Error: Failed to read BMP image data" << std::endl;
+    fclose(file);
+    return false;
+  }
 
-  // Read the actual data from the file into the buffer.
-  fread(rgbData, 1, imageSize, file);
-
-  // Everything is in memory now, the file can be closed.
-  fclose(file);
-
-  return true;
-}
-
-bool WriteBMP(std::string imagepath, unsigned char*& header,
-              unsigned char*& rgbData, size_t headerSize, size_t imageSize) {
-  FILE* file;
-  file = fopen(imagepath.c_str(), "wb");
-  fwrite(header, 1, headerSize, file);
-  fwrite(rgbData, 1, imageSize, file);
   fclose(file);
   return true;
 }
 
-bool ApplyGrayFilter(unsigned char*& header, unsigned char*& rgbData) {
-  const size_t imageSize = *(unsigned int*)&header[IMAGE_SIZE_INDEX];
-  const short bytesPerPixel =
-      (*(unsigned short*)&header[BITS_PER_PIXEL_INDEX]) / BITS_PER_BYTE;
-  unsigned short gray;
+bool WriteBMP(const std::string& imagePath,
+              const std::vector<unsigned char>& header,
+              const std::vector<unsigned char>& rgbData) {
+  FILE* file = fopen(imagePath.c_str(), "wb");
+  if (!file) {
+    std::cerr << "Error: Could not open file for writing: " << imagePath
+              << std::endl;
+    return false;
+  }
 
-  // Applying a grayscale filter
+  if (fwrite(header.data(), 1, header.size(), file) != header.size()) {
+    std::cerr << "Error: Failed to write BMP header to file." << std::endl;
+    fclose(file);
+    return false;
+  }
+
+  if (fwrite(rgbData.data(), 1, rgbData.size(), file) != rgbData.size()) {
+    std::cerr << "Error: Failed to write BMP image data to file." << std::endl;
+    fclose(file);
+    return false;
+  }
+
+  fclose(file);
+  return true;
+}
+
+
+bool ApplyGrayFilter(const std::vector<unsigned char>& header,
+                     std::vector<unsigned char>& rgbData) {
+  const size_t imageSize =
+      *reinterpret_cast<const unsigned int*>(&header[IMAGE_SIZE_INDEX]);
+  const short bytesPerPixel = (*reinterpret_cast<const unsigned short*>(
+                                  &header[BITS_PER_PIXEL_INDEX])) /
+                              BITS_PER_BYTE;
+
   for (size_t i = 0; i < imageSize; i += bytesPerPixel) {
-    // We create a grayscale filter by giving the same value to all RGB components.
-    // The given value is the average of all components
-    gray = (rgbData[i] + rgbData[i + 1] + rgbData[i + 2]) / 3;
-    rgbData[i] = gray;
-    rgbData[i + 1] = gray;
-    rgbData[i + 2] = gray;
+    unsigned char gray = static_cast<unsigned char>(
+        0.3 * rgbData[i + 2] + 0.59 * rgbData[i + 1] + 0.11 * rgbData[i]);
+    rgbData[i] = gray;      // R
+    rgbData[i + 1] = gray;  // G
+    rgbData[i + 2] = gray;  // B
   }
   return true;
 }
 
-bool FlipVertically(unsigned char*& header, unsigned char*& rgbData) {
-  const size_t imageSize = *(int*)&header[IMAGE_SIZE_INDEX];
+bool FlipVertically(const std::vector<unsigned char>& header,
+                    std::vector<unsigned char>& rgbData) {
+  const unsigned int width =
+      *reinterpret_cast<const unsigned int*>(&header[WIDTH_INDEX]);
+  const unsigned int height =
+      *reinterpret_cast<const unsigned int*>(&header[HEIGHT_INDEX]);
   const unsigned short bytesPerPixel =
-      (*(short*)&header[BITS_PER_PIXEL_INDEX]) / BITS_PER_BYTE;
-  unsigned int sp = 0;              // start pointer
-  unsigned int ep = imageSize - 1;  // end pointer
+      (*reinterpret_cast<const unsigned short*>(
+          &header[BITS_PER_PIXEL_INDEX])) /
+      BITS_PER_BYTE;
 
-  while (sp < ep) {
-    for (unsigned short k = 0; k < bytesPerPixel; k++) {
-      // We are reading the data backwards but we still need the RGBA values on forward direction
-      std::swap(rgbData[sp + k], rgbData[ep - (bytesPerPixel - k - 1)]);
-    }
-    sp += bytesPerPixel;
-    ep -= bytesPerPixel;
+
+  const size_t rowSize = width * bytesPerPixel;
+  std::vector<unsigned char> tempRow(rowSize);
+
+  for (unsigned int row = 0; row < height / 2; ++row) {
+    unsigned char* topRow = rgbData.data() + row * rowSize;
+    unsigned char* bottomRow = rgbData.data() + (height - row - 1) * rowSize;
+
+    std::memcpy(tempRow.data(), topRow, rowSize);
+    std::memcpy(topRow, bottomRow, rowSize);
+    std::memcpy(bottomRow, tempRow.data(), rowSize);
   }
+
   return true;
+}
+
+void us_recon_core_export GetImageDimensions(const unsigned char* header,
+                                             unsigned int& width,
+                                             unsigned int& height) {
+  width = *reinterpret_cast<const unsigned int*>(&header[WIDTH_INDEX]);
+  height = *reinterpret_cast<const unsigned int*>(&header[HEIGHT_INDEX]);
 }

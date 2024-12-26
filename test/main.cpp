@@ -1,29 +1,32 @@
-/*
- *    BMP Loader written by Raydelto Hernandez  (raydelto@yahoo.com)
- */
-
-#include <cstdio>
-#include <string>
 #include <iostream>
+#include <vector>
+
 #include "bmp_reader.h"
-using namespace std;
 
-int main(void)
-{
-  unsigned char* rgbData;
-  unsigned char* header;
-  unsigned int imageSize;
-  unsigned int headerSize;
-  cout << "Reading the BMP file ... " << endl;
-  ReadBMP("D:\\Code\\us_recon\\data\\PATI000\\01.BMP", header, rgbData, headerSize, imageSize);
-  ApplyGrayFilter(header, rgbData);
-  FlipVertically(header, rgbData);
 
-  cout << "Writing a new BMP file based on data read from a BMP in the previous step ..." << endl;
-  WriteBMP("D:\\Code\\us_recon\\data\\01-out.BMP", header, rgbData, headerSize, imageSize);
-  cout << "Freeing resources..." << endl;
-  delete[] rgbData;
-  delete[] header;
-  cout << "This application has ended its execution." << endl;
+int main() {
+  std::vector<unsigned char> header;
+  std::vector<unsigned char> rgbData;
+
+  std::cout << "Reading the BMP file..." << std::endl;
+  if (!ReadBMP("D:\\Code\\us_recon\\data\\PATI000\\01.BMP", header, rgbData)) {
+    std::cerr << "Error: Failed to read the BMP file." << std::endl;
+    return 1;
+  }
+  unsigned int width = 0;
+  unsigned int height = 0;
+  GetImageDimensions(header.data(), width, height);
+
+  std::cout << "Image width: " << width << ", Image height: " << height
+            << std::endl;
+  std::cout << "imageSize: "<< rgbData.size() << std::endl;
+  std::cout << "headerSize: "<< header.size() << std::endl;
+
+
+  if (!WriteBMP("D:\\Code\\us_recon\\data\\01-out.BMP", header, rgbData
+               )) {
+    std::cerr << "Error: Failed to write the BMP file." << std::endl;
+    return 1;
+  }
   return 0;
 }
