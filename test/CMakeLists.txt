@@ -1,4 +1,4 @@
-include(${PROJECT_SOURCE_DIR}/test/src.cmake)
+set(test_src main.cpp)
 
 include_directories("${PROJECT_SOURCE_DIR}/test")
 include_directories("${PROJECT_SOURCE_DIR}/core")
