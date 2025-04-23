@@ -1,7 +1,4 @@
 #pragma once
-#include <fstream>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -16,7 +13,7 @@ struct Vertex {
 };
 
 struct Face {
-  std::vector<int> vertexIndices;
+  std::vector<int> vertex_indices;
 };
 
 class us_recon_core_export Mesh {
@@ -24,8 +21,12 @@ class us_recon_core_export Mesh {
   Mesh() = default;
   ~Mesh() = default;
 
-  bool read(const std::string& filename);
-  bool write(const std::string& filename);
+  void AddVertices(const std::vector<Vertex>& vertices) {
+    vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
+  }
+
+  bool Read(const std::string& filename);
+  bool Write(const std::string& filename);
 
 private:
   std::vector<Vertex> vertices_;

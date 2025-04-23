@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+
 #include "us_recon_export.h"
 
 namespace us {
@@ -20,7 +21,6 @@ namespace us {
     const std::vector<unsigned char>& header,
     const std::vector<unsigned char>& rgbData);
 
-  // 读取图像宽度和高度
   void us_recon_core_export GetImageDimensions(const unsigned char* header, unsigned int& width,
     unsigned int& height);
 }

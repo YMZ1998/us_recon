@@ -1,8 +1,6 @@
 #pragma once
-#include <iostream>
 #include <vector>
 
-#include "images.h"
 
 namespace us {
 class UsRecon {

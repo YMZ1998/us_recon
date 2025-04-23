@@ -1,8 +1,11 @@
-// Mesh.cpp
 #include "mesh.h"
+
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
 namespace us {
-  // 读取PLY文件
-  bool Mesh::read(const std::string& filename) {
+  bool Mesh::Read(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
       std::cerr << "Error opening file!" << std::endl;
@@ -16,7 +19,6 @@ namespace us {
     bool hasColor = false;
     bool hasNormal = false;
 
-    // 读取 PLY 文件头
     while (std::getline(file, line)) {
       std::istringstream iss(line);
       std::string word;
@@ -44,7 +46,6 @@ namespace us {
       }
     }
 
-    // 读取顶点数据
     if (!inHeader) {
       vertices_.resize(vertexCount);
       for (int i = 0; i < vertexCount; ++i) {
@@ -68,16 +69,15 @@ namespace us {
         }
       }
 
-      // 读取面数据
       faces_.resize(faceCount);
       for (int i = 0; i < faceCount; ++i) {
         std::getline(file, line);
         std::istringstream iss(line);
         int vertexCountInFace;
         iss >> vertexCountInFace;
-        faces_[i].vertexIndices.resize(vertexCountInFace);
+        faces_[i].vertex_indices.resize(vertexCountInFace);
         for (int j = 0; j < vertexCountInFace; ++j) {
-          iss >> faces_[i].vertexIndices[j];
+          iss >> faces_[i].vertex_indices[j];
         }
       }
     }
@@ -86,8 +86,7 @@ namespace us {
     return true;
   }
 
-  // 写入PLY文件
-  bool Mesh::write(const std::string& filename) {
+  bool Mesh::Write(const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
       std::cerr << "Error opening file!" << std::endl;
@@ -97,7 +96,10 @@ namespace us {
     file << "ply\n";
     file << "format ascii 1.0\n";
     file << "element vertex " << vertices_.size() << "\n";
-    for (const auto& attrName : {"x", "y", "z", "red","green","blue", "nx","ny","nz"}) {
+    file << "property float " << "x" << "\n";
+    file << "property float " << "y" << "\n";
+    file << "property float " << "z" << "\n";
+    for (const auto& attrName : {"red","green","blue", "nx","ny","nz"}) {
       auto it = vertex_attributes_.find(attrName);
 
       if (it != vertex_attributes_.end()) {
@@ -109,7 +111,6 @@ namespace us {
     file << "property list uchar int vertex_indices\n";
     file << "end_header\n";
 
-    // 写入顶点数据
     for (const auto& vertex : vertices_) {
       file << vertex.x << " " << vertex.y << " " << vertex.z;
       for (const auto& attr : vertex_attributes_) {
@@ -120,16 +121,16 @@ namespace us {
       file << "\n";
     }
 
-    // 写入面数据
     for (const auto& face : faces_) {
-      file << face.vertexIndices.size();
-      for (const auto& index : face.vertexIndices) {
+      file << face.vertex_indices.size();
+      for (const auto& index : face.vertex_indices) {
         file << " " << index;
       }
       file << "\n";
     }
 
     file.close();
+    std::cout << "save in: " << filename << std::endl;
     return true;
   }
 }

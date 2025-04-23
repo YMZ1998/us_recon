@@ -19,31 +19,27 @@ void ReadImage(const std::string& image_path, Image& image, int flag) {
   image.Init(header, image_data, flag);
 }
 
-//int main() {
-//  std::string file_path = "D:\\Code\\us_recon\\data\\test";
-//
-//  Images images;
-//  int flag = 0;
-//  for (const auto& image_path : fs::directory_iterator(file_path)) {
-//    if (image_path.is_regular_file() &&
-//        image_path.path().extension() == ".BMP") {
-//      std::cout << image_path.path() << "\n";
-//      Image image;
-//      ReadImage(image_path.path().string(), image, flag++);
-//      image.PrintCoords();
-//      images.PushImage(image);
-//    }
-//  }
-//  images.info();
-//
-//  return 0;
-//}
-
 int main() {
+  std::string file_path = "D:\\Code\\us_recon\\data\\test2";
+
+  Images images;
   Mesh mesh;
+  int flag = 0;
+  for (const auto& image_path : fs::directory_iterator(file_path)) {
+    if (image_path.is_regular_file() &&
+        image_path.path().extension() == ".BMP") {
+      std::cout << image_path.path() << "\n";
+      Image image;
+      ReadImage(image_path.path().string(), image, flag++);
+      //image.PrintCoords();
 
-  mesh.read("D:\\Code\\us_recon\\data\\input.ply");
-  mesh.write("D:\\Code\\us_recon\\data\\output.ply");
-
+      std::vector<Vertex> vertices;
+      image.GetVertices(vertices);
+      mesh.AddVertices(vertices);
+      images.PushImage(image);
+    }
+  }
+  //images.info();
+  mesh.Write("D:\\Code\\us_recon\\data\\output.ply");
   return 0;
 }
