@@ -1,4 +1,4 @@
-set(test_src main.cpp)
+set(test_src main.cpp test_by_image.cpp)
 
 include_directories("${PROJECT_SOURCE_DIR}/test")
 include_directories("${PROJECT_SOURCE_DIR}/core")
