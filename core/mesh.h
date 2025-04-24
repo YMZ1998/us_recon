@@ -8,12 +8,23 @@
 namespace us {
 struct Vertex {
   float x, y, z;
-  std::unordered_map<std::string, float>
-      attributes;
+  Vertex() : x(0), y(0), z(0) {}
+  Vertex(float x_val, float y_val, float z_val)
+      : x(x_val), y(y_val), z(z_val) {}
+  std::unordered_map<std::string, float> attributes;
 };
 
 struct Face {
   std::vector<int> vertex_indices;
+
+  Face() { vertex_indices.resize(3); }
+
+  Face(int idx1, int idx2, int idx3) {
+    vertex_indices.resize(3);
+    vertex_indices[0] = idx1;
+    vertex_indices[1] = idx2;
+    vertex_indices[2] = idx3;
+  }
 };
 
 class us_recon_core_export Mesh {
@@ -25,13 +36,14 @@ class us_recon_core_export Mesh {
     vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
   }
 
+  void AddFace(const Face& face) { faces_.push_back(face); }
+
   bool Read(const std::string& filename);
   bool Write(const std::string& filename);
 
-private:
+ private:
   std::vector<Vertex> vertices_;
   std::vector<Face> faces_;
   std::unordered_map<std::string, int> vertex_attributes_;
-
 };
 }  // namespace us
