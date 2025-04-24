@@ -58,17 +58,6 @@ add_definitions(-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
 
 include("${PROJECT_SOURCE_DIR}/macro.cmake")
 
-SET(UTILS_PATH "${PROJECT_SOURCE_DIR}/utils")
-
-#utils
-if(NOT UTILS_PATH)
-  find_path(UTILS_PATH NAMES utils_path.cmake)
-endif()
-if(NOT UTILS_PATH)
-  message(FATAL_ERROR "no utils found")
-endif()
-include(${UTILS_PATH}/utils_path.cmake)
-
 subdirs(core)
 #projects
 option(build_test "Build test" OFF)
