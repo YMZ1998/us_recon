@@ -1,6 +1,5 @@
 #include "mesh.h"
 
-#include <math.h>
 #include <fstream>
 #include <iostream>
 #include <set>
