@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -41,9 +42,39 @@ class us_recon_core_export Mesh {
   bool Read(const std::string& filename);
   bool Write(const std::string& filename);
 
- private:
+ public:
   std::vector<Vertex> vertices_;
   std::vector<Face> faces_;
+
+ private:
   std::unordered_map<std::string, int> vertex_attributes_;
 };
+
+struct Edge {
+  int v1, v2;
+  Edge(int a, int b) {
+    if (a < b) {
+      v1 = a;
+      v2 = b;
+    } else {
+      v1 = b;
+      v2 = a;
+    }
+  }
+  bool operator==(const Edge& other) const {
+    return v1 == other.v1 && v2 == other.v2;
+  }
+};
+
+struct EdgeHasher {
+  std::size_t operator()(const Edge& e) const {
+    return std::hash<int>()(e.v1) ^ std::hash<int>()(e.v2);
+  }
+};
+
+class us_recon_core_export MeshSubdivision {
+ public:
+  static Mesh Subdivide(const Mesh& mesh);
+};
+
 }  // namespace us
