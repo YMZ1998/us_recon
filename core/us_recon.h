@@ -5,7 +5,7 @@
 #include "us_recon_export.h"
 
 namespace us {
-
+class Mesh;
 struct Point3d {
   double x;
   double y;
@@ -44,7 +44,7 @@ class us_recon_core_export UsRecon {
   UsRecon() {}
   ~UsRecon() {}
 
-  void Run(std::vector<std::vector<Point2d>> xy_groups);
+  Mesh Run(std::vector<std::vector<Point2d>> xy_groups, bool subdivide = true, bool update_normal = true);
 
  private:
   ;

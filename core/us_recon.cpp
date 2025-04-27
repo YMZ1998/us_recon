@@ -10,6 +10,13 @@
 namespace us {
 #define M_PI 3.14159265358979323846
 
+const double IMAGE_WIDTH = 240;
+const double CENTER_X = 120;
+const double ANGLE_STEP = 15;
+const double PIXEL_SPACING = 0.04979;
+const int NUM_IMAGES = 12;
+const int NUM_POINTS = 49;
+
 static void PrintPoint(const Point2d& point) {
   std::cout << "(" << point.x << ", " << point.y << ")\n";
 }
@@ -80,7 +87,7 @@ static void sort_points(std::vector<Point2d>& points) {
     return;
 
   Point2d center = calculate_center(points);
-  center.x = 120;  // 固定中心 x 坐标
+  center.x = CENTER_X;  // 固定中心 x 坐标
 
   std::sort(
       points.begin(), points.end(), [&](const Point2d& a, const Point2d& b) {
@@ -143,8 +150,8 @@ static std::vector<std::vector<Point3d>> merge_3d_points(
   return new_points;
 }
 
-static void generate_mesh(
-    const std::vector<std::vector<Point3d>>& all_rings_3d) {
+static Mesh generate_mesh(const std::vector<std::vector<Point3d>>& all_rings_3d,
+                          bool subdivide = true, bool update_normal = true) {
   Mesh mesh;
   for (const auto& ring_3d : all_rings_3d) {
     std::vector<Vertex> vertices;
@@ -153,7 +160,7 @@ static void generate_mesh(
     }
     mesh.AddVertices(vertices);
   }
-  std::vector<std::vector<int>> triangles;
+  std::vector<Face> triangles;
   int vert_start_idx = 0;
 
   // Build triangles between consecutive rings
@@ -212,16 +219,12 @@ static void generate_mesh(
   triangles.push_back({last_idx_ring1, first_idx_ring1, last_idx_ring2});
   triangles.push_back({first_idx_ring1, first_idx_ring2, last_idx_ring2});
 
-  for (const auto& triangle : triangles) {
-    Face face(triangle[0], triangle[1], triangle[2]);
-    mesh.AddFace(face);
+  mesh.AddFaces(triangles);
+  Mesh subdivided_mesh = subdivide ? mesh.Subdivide() : mesh;
+  if (update_normal) {
+    subdivided_mesh.UpdateNormals();
   }
-
-  //mesh.Write("D:\\Code\\us_recon\\data\\output_by_bin.ply");
-
-  Mesh subdivided_mesh = MeshSubdivision::Subdivide(mesh);
-  subdivided_mesh.Write(
-      "D:\\Code\\us_recon\\data\\output_by_bin_subdivided.ply");
+  return subdivided_mesh;
 }
 
 static int find_nearest_point_near_index(const std::vector<Point2d>& group,
@@ -247,7 +250,7 @@ static int find_nearest_point_near_index(const std::vector<Point2d>& group,
 
 void adjust_points_with_copy_remove(std::vector<Point2d>& points) {
   int nearest_index = find_nearest_point_near_index(points);
-  PrintPoint(points[nearest_index]);
+  //PrintPoint(points[nearest_index]);
 
   int left_count = nearest_index;
   int right_count = points.size() - nearest_index - 1;
@@ -273,7 +276,7 @@ void adjust_points_with_copy_remove(std::vector<Point2d>& points) {
   }
 
   int middle_index = points.size() / 2;
-  PrintPoint(points[middle_index]);
+  //PrintPoint(points[middle_index]);
 }
 
 void adjust_spacing_half(std::vector<Point2d>& points_2d) {
@@ -286,7 +289,6 @@ void adjust_spacing_half(std::vector<Point2d>& points_2d) {
   left = adjust_spacing(left);
   right = adjust_spacing(right);
 
-  // 合并结果回原始 vector
   for (int i = 0; i < middle_index; ++i) {
     points_2d[i] = left[i];
   }
@@ -295,22 +297,16 @@ void adjust_spacing_half(std::vector<Point2d>& points_2d) {
   }
 }
 
-void UsRecon::Run(std::vector<std::vector<Point2d>> xy_groups) {
-
-  const double IMAGE_WIDTH = 240;
-  const double ANGLE_STEP = 15;
-  const double PIXEL_SPACING = 0.04979;
-  const int NUM_IMAGES = 12;
-
-  //std::vector<std::vector<Point2d>> all_rings_2d;
+Mesh UsRecon::Run(std::vector<std::vector<Point2d>> xy_groups, bool subdivide,
+                  bool update_normal) {
   std::vector<std::vector<Point3d>> all_rings_3d;
+  all_rings_3d.reserve(NUM_IMAGES);
 
   for (int i = 0; i < NUM_IMAGES; ++i) {
     double angle_deg = i * ANGLE_STEP;
-    double center_x = IMAGE_WIDTH / 2;
     std::vector<Point2d> points_2d = xy_groups[i];
 
-    while (points_2d.size() < 49) {
+    while (points_2d.size() < NUM_POINTS) {
       points_2d.push_back(points_2d.back());
     }
 
@@ -325,12 +321,11 @@ void UsRecon::Run(std::vector<std::vector<Point2d>> xy_groups) {
     adjust_points_with_copy_remove(points_2d);
     adjust_spacing_half(points_2d);
 
-    //all_rings_2d.push_back(points_2d);
-
     std::vector<Point3d> points_3d;
+    points_3d.reserve(NUM_POINTS);
     for (const auto& point : points_2d) {
       points_3d.push_back(
-          convert_to_3d(point, angle_deg, center_x, PIXEL_SPACING));
+          convert_to_3d(point, angle_deg, CENTER_X, PIXEL_SPACING));
     }
     all_rings_3d.push_back(points_3d);
   }
@@ -338,7 +333,7 @@ void UsRecon::Run(std::vector<std::vector<Point2d>> xy_groups) {
   std::vector<std::vector<Point3d>> updated_points =
       merge_3d_points(all_rings_3d);
 
-  generate_mesh(updated_points);
+  return generate_mesh(updated_points, subdivide, update_normal);
 }
 
 }  // namespace us

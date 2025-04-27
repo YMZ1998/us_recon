@@ -13,6 +13,25 @@ struct Vertex {
   Vertex(float x_val, float y_val, float z_val)
       : x(x_val), y(y_val), z(z_val) {}
   std::unordered_map<std::string, float> attributes;
+
+  inline float length() const { return std::sqrt(x * x + y * y + z * z); }
+
+  inline Vertex normalize() const {
+    float len = length();
+    if (len == 0) {
+      return Vertex(0, 0, 0);
+    }
+    return Vertex(x / len, y / len, z / len);
+  }
+
+  inline Vertex cross(const Vertex& other) const {
+    return Vertex(y * other.z - z * other.y, z * other.x - x * other.z,
+                  x * other.y - y * other.x);
+  }
+
+  inline float dot(const Vertex& other) const {
+    return x * other.x + y * other.y + z * other.z;
+  }
 };
 
 struct Face {
@@ -33,11 +52,25 @@ class us_recon_core_export Mesh {
   Mesh() = default;
   ~Mesh() = default;
 
+  void AddVertex(const Vertex& vertex) { vertices_.push_back(vertex); }
+
   void AddVertices(const std::vector<Vertex>& vertices) {
     vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
   }
 
   void AddFace(const Face& face) { faces_.push_back(face); }
+
+  void AddFaces(const std::vector<Face>& faces) {
+    faces_.insert(faces_.end(), faces.begin(), faces.end());
+  }
+
+  void ReserveVertices(size_t n) { vertices_.reserve(n); }
+
+  void ReserveFaces(size_t n) { faces_.reserve(n); }
+
+  void UpdateNormals();
+
+  Mesh Subdivide() const;
 
   bool Read(const std::string& filename);
   bool Write(const std::string& filename);
@@ -68,13 +101,15 @@ struct Edge {
 
 struct EdgeHasher {
   std::size_t operator()(const Edge& e) const {
-    return std::hash<int>()(e.v1) ^ std::hash<int>()(e.v2);
+    std::size_t h1 = std::hash<int>()(e.v1);
+    std::size_t h2 = std::hash<int>()(e.v2);
+    return h1 ^ (h2 << 1);
   }
 };
 
-class us_recon_core_export MeshSubdivision {
- public:
-  static Mesh Subdivide(const Mesh& mesh);
-};
+//class us_recon_core_export MeshSubdivision {
+// public:
+//  static Mesh Subdivide(const Mesh& mesh);
+//};
 
 }  // namespace us
