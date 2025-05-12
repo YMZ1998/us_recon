@@ -28,6 +28,18 @@ struct Point2d {
   Point2d() : x(0), y(0) {}
   Point2d(double x_val, double y_val) : x(x_val), y(y_val) {}
 
+  Point2d operator+(const Point2d& other) const {
+    return Point2d(x + other.x, y + other.y);
+  }
+
+  Point2d operator-(const Point2d& other) const {
+    return Point2d(x - other.x, y - other.y);
+  }
+
+  Point2d operator/(double value) const {
+    return Point2d(x / value, y / value);
+  }
+
   double distance_to(const Point2d& other) const {
     return std::sqrt(std::pow(x - other.x, 2) + std::pow(y - other.y, 2));
   }

@@ -10,12 +10,12 @@
 namespace us {
 #define M_PI 3.14159265358979323846
 
-const double IMAGE_WIDTH = 240;
-const double CENTER_X = 120;
-const double ANGLE_STEP = 15;
-const double PIXEL_SPACING = 0.04979;
-const int NUM_IMAGES = 12;
-const int NUM_POINTS = 49;
+constexpr double IMAGE_WIDTH = 240;
+constexpr double CENTER_X = 120;
+constexpr double ANGLE_STEP = 15;
+constexpr double PIXEL_SPACING = 0.04979;
+constexpr int NUM_IMAGES = 12;
+constexpr int NUM_POINTS = 49;
 
 static void PrintPoint(const Point2d& point) {
   std::cout << "(" << point.x << ", " << point.y << ")\n";
@@ -29,6 +29,51 @@ static void PrintPoints(const std::vector<Point2d>& points,
   }
   std::cout << std::endl;
 }
+
+static std::vector<Point2d> smooth_points(const std::vector<Point2d>& points,
+                                          size_t window_size = 5,
+                                          size_t iterations = 1) {
+  std::vector<Point2d> smoothed_points = points;
+
+  int num_points = smoothed_points.size();
+
+  for (int iter = 0; iter < iterations; ++iter) {
+    for (int i = 0; i < num_points; ++i) {
+      int start = i - window_size / 2;
+      int end = i + window_size / 2 + 1;
+
+      Point2d sum;
+
+      if (start < 0) {
+        for (int j = 0; j < end; ++j) {
+          sum = sum + smoothed_points[j];
+        }
+        for (int j = num_points + start; j < num_points; ++j) {
+          sum = sum + smoothed_points[j];
+        }
+      } else if (end > num_points) {
+        for (int j = start; j < num_points; ++j) {
+          sum = sum + smoothed_points[j];
+        }
+        for (int j = 0; j < end - num_points; ++j) {
+          sum = sum + smoothed_points[j];
+        }
+      } else {
+        for (int j = start; j < end; ++j) {
+          sum = sum + smoothed_points[j];
+        }
+      }
+
+      smoothed_points[i] = sum / window_size;
+      //std::cout << start << "," << end << std::endl;
+      //PrintPoint(points[i]);
+      //PrintPoint(smoothed_points[i] - points[i]);
+    }
+  }
+
+  return smoothed_points;
+}
+
 static std::vector<Point2d> adjust_spacing(const std::vector<Point2d>& points) {
   std::vector<double> distances = {0};
   double total_distance = 0;
@@ -318,6 +363,7 @@ Mesh UsRecon::Run(std::vector<std::vector<Point2d>> xy_groups, bool subdivide,
 
     sort_points(points_2d);
     points_2d = adjust_spacing(points_2d);
+    points_2d = smooth_points(points_2d);
     adjust_points_with_copy_remove(points_2d);
     adjust_spacing_half(points_2d);
 

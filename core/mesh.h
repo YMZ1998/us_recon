@@ -107,9 +107,4 @@ struct EdgeHasher {
   }
 };
 
-//class us_recon_core_export MeshSubdivision {
-// public:
-//  static Mesh Subdivide(const Mesh& mesh);
-//};
-
 }  // namespace us

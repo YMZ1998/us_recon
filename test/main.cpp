@@ -66,6 +66,7 @@ static std::vector<std::vector<Point2d>> create_xy_groups(
 }
 
 void test_case(std::string case_name) {
+  std::cout << "case name: " << case_name << std::endl;
   std::string data_path = "D:\\Data\\³¬Éù\\20250207_82521\\20250207\\";
   std::string output_filename =
       "D:\\Code\\us_recon\\data\\output_by_bin_subdivided.ply";

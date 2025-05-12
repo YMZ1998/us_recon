@@ -38,23 +38,23 @@ else("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 endif("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 
 #openmp
-include (FindOpenMP)
-if (OPENMP_FOUND)
-      message("build with openmp")
-      set (HAVE_OPENMP TRUE)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-endif()
+#include (FindOpenMP)
+#if (OPENMP_FOUND)
+#      message("build with openmp")
+#      set (HAVE_OPENMP TRUE)
+#      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+#      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#endif()
 
 #cmake folder
 set_property(GLOBAL PROPERTY USE_FOLDERS ON) 
 
 #cuda
-if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-  set(CMAKE_CUDA_ARCHITECTURES 70 75 80)
-endif(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+#if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+#  set(CMAKE_CUDA_ARCHITECTURES 70 75 80)
+#endif(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
 
-add_definitions(-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
+#add_definitions(-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
 
 include("${PROJECT_SOURCE_DIR}/macro.cmake")
 
